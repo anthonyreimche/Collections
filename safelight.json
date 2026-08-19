@@ -1,0 +1,23 @@
+{
+  "id": "com.safelight.collections",
+  "name": "Collections",
+  "version": "1.0.0",
+  "description": "Collections and smart collections for your library — virtual groupings independent of folder structure. Gather photos into named collections by right-click, drag-and-drop, or the B target-collection shortcut, and build rule-based smart collections (rating, flags, labels, keywords, dates, camera, lens, ISO and more) that update live as your library changes.",
+  "author": "Anthony Reimche <anthonyreimche@gmail.com>",
+  "main": "index.js",
+  "categories": ["Library", "Workflow"],
+  "keywords": [
+    "collections",
+    "smart collections",
+    "albums",
+    "groups",
+    "virtual folders",
+    "organize",
+    "lightroom",
+    "quick collection",
+    "target collection",
+    "dam"
+  ],
+  "license": "MIT",
+  "minAppVersion": "2.5.1"
+}
