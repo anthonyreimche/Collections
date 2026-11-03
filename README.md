@@ -26,7 +26,7 @@ Docked on the left side of the Library between Folders and Filters (View menu �
 A smart collection is a saved query: photos match its rules live, nothing is stored per photo. The editor previews the match count as you type.
 
 - **Match all / any** of the rules.
-- **Fields** — rating, flag, color label, keyword, filename, folder, file type (including a `RAW` group), capture and import dates (last N days, before/after, between), camera, lens, ISO, focal length, aperture, shutter speed, orientation, GPS presence, and virtual copies.
+- **Fields** — rating, flag, colour label, keyword, filename, folder, file type (including a `RAW` group), capture and import dates (last N days, before/after, between), camera, lens, ISO, focal length, aperture, shutter speed, orientation, GPS presence, and virtual copies.
 - Rules written by a newer version of the extension are kept and shown as unsupported rather than discarded, so files round-trip safely between versions.
 
 ## Development
@@ -42,6 +42,6 @@ npm run typecheck
 
 Single-file ESM bundle, classic-JSX against the app's React (`api.react`), inline styles over `api.ui` primitives and tokens. Collections persist via extension settings and sync across windows; membership references photo ids, which are unique per photo, so a collection can never pick up another project's images. The grid integration is one `registerGridFilter` predicate — core stays blind to why photos are shown.
 
-## License
+## Licence
 
 MIT

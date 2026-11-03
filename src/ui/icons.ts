@@ -1,5 +1,5 @@
 // Inline SVG factories (no asset pipeline in a runtime-loaded bundle). All
-// strokes/fills use currentColor so rows can tint them via CSS color.
+// strokes/fills use currentColor so rows can tint them via CSS colour.
 
 import { React } from "../runtime.ts";
 import type { ReactElement } from "react";

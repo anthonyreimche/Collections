@@ -25,6 +25,7 @@ const SETTING_DATA = "data";
 const SETTING_TARGET = "targetId";
 const SETTING_UI = "ui";
 const PERSIST_DELAY_MS = 300;
+const PRUNE_DELAY_MS = 100;
 const QUICK_NAME = "Quick Collection";
 
 export type DialogState =
@@ -50,6 +51,8 @@ export let cs!: StoreHook<CollectionsState>;
 
 let notify: (message: string) => void = () => {};
 let persistTimer: ReturnType<typeof setTimeout> | undefined;
+let pruneTimer: ReturnType<typeof setTimeout> | undefined;
+let removedIds = new Set<string>();
 let ownFolderWrite = false;
 let panelMounted = false;
 let disposers: (() => void)[] = [];
@@ -329,10 +332,26 @@ export function toggleTargetMembership(photoIds: string[]): void {
   }
 }
 
+/** Core reports a bulk removal one photo at a time, with other extensions'
+ *  hooks (file I/O) in between, so removals gather until they go quiet and a
+ *  bulk removal prunes, persists and re-derives the grid filter once. */
 export function pruneRemovedPhoto(photoId: string): void {
+  removedIds.add(photoId);
+  if (pruneTimer !== undefined) clearTimeout(pruneTimer);
+  pruneTimer = setTimeout(flushRemovedPhotos, PRUNE_DELAY_MS);
+}
+
+export function flushRemovedPhotos(): void {
+  if (pruneTimer !== undefined) {
+    clearTimeout(pruneTimer);
+    pruneTimer = undefined;
+  }
+  if (removedIds.size === 0) return;
+  const ids = [...removedIds];
+  removedIds = new Set();
   let changed = false;
   for (const c of cs.getState().collections) {
-    if (c.kind === "collection" && removeMembers(c, [photoId]) > 0) changed = true;
+    if (c.kind === "collection" && removeMembers(c, ids) > 0) changed = true;
   }
   if (changed) {
     persist();

@@ -1,4 +1,4 @@
-// Store behavior against a fake SafelightAPI: persistence, activation
+// Store behaviour against a fake SafelightAPI: persistence, activation
 // semantics (folder-null + guarded deactivation), target-collection B-flow,
 // removal hygiene, cross-window adoption.
 // Run: node --experimental-strip-types src/store.test.ts
@@ -14,6 +14,7 @@ import {
   deleteAction,
   disposeCollectionsStore,
   flushPersist,
+  flushRemovedPhotos,
   initCollectionsStore,
   openAddTo,
   pruneRemovedPhoto,
@@ -233,8 +234,26 @@ assert.equal(dockToggles.length, 1, "mounted panel isn't toggled again");
 // ── removal hygiene ──────────────────────────────────────────────────────────
 
 pruneRemovedPhoto("p3");
+flushRemovedPhotos();
 assert.deepEqual(quick().memberIds, ["p1"]);
 assert.deepEqual(seed().memberIds, ["gone", "p2"], "other ids untouched");
+
+// Core reports a bulk removal one photo at a time, awaiting each extension's
+// hook (other extensions may do file I/O in between): one prune, one bump.
+const bulk = Array.from({ length: 1000 }, (_, i) => `bulk${i}`);
+addPhotosTo("seed", bulk);
+let bumps = 0;
+const stopCounting = cs.subscribe((s, prev) => {
+  if (s.revision !== prev.revision) bumps += 1;
+});
+for (const [i, id] of bulk.entries()) {
+  pruneRemovedPhoto(id);
+  await (i % 100 === 0 ? new Promise((r) => setTimeout(r, 0)) : Promise.resolve());
+}
+await new Promise((r) => setTimeout(r, 300));
+stopCounting();
+assert.equal(bumps, 1, "1,000 removals bump once");
+assert.deepEqual(seed().memberIds, ["gone", "p2"], "every removed id pruned");
 
 // ── delete: active + target fall back ────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 // Minimal vanilla-DOM toast for actions that run with no extension UI on
-// screen (the B shortcut, grid-menu adds). Singleton pill, bottom-center,
+// screen (the B shortcut, grid-menu adds). Singleton pill, bottom-centre,
 // replaced on repeat calls; themed via the app's CSS variables.
 
 let el: HTMLDivElement | null = null;

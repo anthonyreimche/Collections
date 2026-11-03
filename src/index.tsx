@@ -10,6 +10,7 @@ import {
   deactivateCollection,
   disposeCollectionsStore,
   flushPersist,
+  flushRemovedPhotos,
   initCollectionsStore,
   openAddTo,
   PANEL_ID,
@@ -110,6 +111,7 @@ export function deactivate(): void {
   // Contributions are swept by the host; flush the debounced write so a quick
   // disable can't lose the last edit, then detach core-store listeners and
   // drop the toast's DOM node.
+  flushRemovedPhotos();
   flushPersist();
   disposeCollectionsStore();
   disposeToast();

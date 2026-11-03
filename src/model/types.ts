@@ -90,7 +90,7 @@ export const FIELD_DEFS: FieldDef[] = [
     ],
   },
   {
-    field: "label", label: "Color label", kind: "enum", ops: [is(), isnot()],
+    field: "label", label: "Colour label", kind: "enum", ops: [is(), isnot()],
     options: ["none", "red", "yellow", "green", "blue", "purple"].map((value) => ({ value, label: value })),
   },
   { field: "keyword", label: "Keyword", kind: "text", ops: [contains, ncontains, is()] },
