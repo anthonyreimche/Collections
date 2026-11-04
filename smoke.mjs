@@ -29,7 +29,7 @@ function makeStore(init) {
   return hook;
 }
 
-// ── mocked catalog / ui stores ───────────────────────────────────────────────
+// ── mocked catalogue / ui stores ───────────────────────────────────────────────
 const photo = (id) => ({
   id,
   filename: `${id}.NEF`,

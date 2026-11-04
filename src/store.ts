@@ -359,7 +359,7 @@ export function flushRemovedPhotos(): void {
   }
 }
 
-// ── dialog / panel state ─────────────────────────────────────────────────────
+// ── dialogue / panel state ─────────────────────────────────────────────────────
 
 export function openAddTo(photoIds: string[]): void {
   if (photoIds.length === 0) return;

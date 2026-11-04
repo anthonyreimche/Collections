@@ -1,4 +1,4 @@
-// Fixed-inset dialog shell (the shape core dialogs use), rendered from the
+// Fixed-inset dialogue shell (the shape core dialogues use), rendered from the
 // panel's subtree so it works docked, floating, or detached. Backdrop click
 // and Escape close.
 

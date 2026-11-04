@@ -1,5 +1,5 @@
 // The Collections panel: sorted rows with live counts, inline rename and
-// delete-confirm, context menu, grid-drop targets, and the two dialogs
+// delete-confirm, context menu, grid-drop targets, and the two dialogues
 // (rendered as fixed-inset overlays from this subtree so they work docked,
 // floating, or in a detached window).
 
@@ -58,7 +58,7 @@ export function CollectionsPanel(): ReactElement {
       );
     }
     return map;
-    // revision covers collection edits; photos covers catalog changes.
+    // revision covers collection edits; photos covers catalogue changes.
   }, [revision, photos, live]);
 
   const sorted = React.useMemo(

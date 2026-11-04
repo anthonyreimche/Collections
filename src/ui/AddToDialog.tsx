@@ -1,6 +1,6 @@
 // "Add photos to collection" chooser: tri-state membership checkboxes over the
 // regular collections, plus an inline create-and-add row. Toggles apply
-// immediately (the dialog is a live view, not a form).
+// immediately (the dialogue is a live view, not a form).
 
 import type { ReactElement } from "react";
 import { React, ui } from "../runtime.ts";

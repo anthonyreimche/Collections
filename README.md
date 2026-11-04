@@ -19,7 +19,7 @@ Docked on the left side of the Library between Folders and Filters (View menu �
 - **Right-click ▸ Add to collection…** opens a chooser with membership checkboxes for the selected photos (checked = all in, dash = some), plus an inline "New collection" row. Changes apply immediately.
 - **B — the target collection.** Press `B` to toggle the selection in your target collection, marked with a `+` badge in the panel (right-click a collection ▸ *Set as target collection*). The first press with no target creates a "Quick Collection" for you. A toast confirms each add/remove, so it works with the panel closed.
 - **Remove** — while browsing a collection, right-click ▸ *Remove from "‹name›"*; or untick it in the chooser.
-- Removing a photo from the catalog removes it from every collection automatically.
+- Removing a photo from the catalogue removes it from every collection automatically.
 
 ## Smart collections
 

@@ -221,7 +221,7 @@ assert.ok(
 );
 assert.equal(settingsMap.get("targetId"), quick().id);
 
-// ── dialogs: add-to opens the panel only when unmounted ──────────────────────
+// ── dialogues: add-to opens the panel only when unmounted ──────────────────────
 
 setPanelMounted(false);
 openAddTo(["p1"]);

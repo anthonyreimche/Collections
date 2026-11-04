@@ -88,7 +88,7 @@ export function removeMembers(c: Collection, ids: string[]): number {
   return before - c.memberIds.length;
 }
 
-/** Whether the panel lists this collection for the open catalog: smart
+/** Whether the panel lists this collection for the open catalogue: smart
  *  collections are queries (always), regular ones when empty or when at least
  *  one member resolves here. Hidden ones stay intact — their photos live in
  *  another project folder. */
@@ -98,7 +98,7 @@ export function isRelevant(c: AnyCollection, liveIds: ReadonlySet<string>): bool
 }
 
 export interface ResolvedCount {
-  /** Members resolving in the open catalog (or live smart matches). */
+  /** Members resolving in the open catalogue (or live smart matches). */
   shown: number;
   /** Members held in other projects. */
   elsewhere: number;

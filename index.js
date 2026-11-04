@@ -119,7 +119,7 @@ const FIELD_DEFS = [
 	},
 	{
 		field: "label",
-		label: "Color label",
+		label: "Colour label",
 		kind: "enum",
 		ops: [is(), isnot()],
 		options: [
@@ -707,7 +707,7 @@ function removeMembers(c, ids) {
 	c.memberIds = c.memberIds.filter((id) => !drop.has(id));
 	return before - c.memberIds.length;
 }
-/** Whether the panel lists this collection for the open catalog: smart
+/** Whether the panel lists this collection for the open catalogue: smart
 *  collections are queries (always), regular ones when empty or when at least
 *  one member resolves here. Hidden ones stay intact — their photos live in
 *  another project folder. */
@@ -737,10 +737,13 @@ const SETTING_DATA = "data";
 const SETTING_TARGET = "targetId";
 const SETTING_UI = "ui";
 const PERSIST_DELAY_MS = 300;
+const PRUNE_DELAY_MS = 100;
 const QUICK_NAME = "Quick Collection";
 let cs;
 let notify = () => {};
 let persistTimer;
+let pruneTimer;
+let removedIds = /* @__PURE__ */ new Set();
 let ownFolderWrite = false;
 let panelMounted = false;
 let disposers = [];
@@ -978,9 +981,24 @@ function toggleTargetMembership(photoIds) {
 	if (photoIds.every((id) => members.has(id))) removePhotosFrom(target.id, photoIds);
 	else addPhotosTo(target.id, photoIds);
 }
+/** Core reports a bulk removal one photo at a time, with other extensions'
+*  hooks (file I/O) in between, so removals gather until they go quiet and a
+*  bulk removal prunes, persists and re-derives the grid filter once. */
 function pruneRemovedPhoto(photoId) {
+	removedIds.add(photoId);
+	if (pruneTimer !== void 0) clearTimeout(pruneTimer);
+	pruneTimer = setTimeout(flushRemovedPhotos, PRUNE_DELAY_MS);
+}
+function flushRemovedPhotos() {
+	if (pruneTimer !== void 0) {
+		clearTimeout(pruneTimer);
+		pruneTimer = void 0;
+	}
+	if (removedIds.size === 0) return;
+	const ids = [...removedIds];
+	removedIds = /* @__PURE__ */ new Set();
 	let changed = false;
-	for (const c of cs.getState().collections) if (c.kind === "collection" && removeMembers(c, [photoId]) > 0) changed = true;
+	for (const c of cs.getState().collections) if (c.kind === "collection" && removeMembers(c, ids) > 0) changed = true;
 	if (changed) {
 		persist();
 		bump();
@@ -1905,6 +1923,7 @@ function activate(api) {
 	});
 }
 function deactivate() {
+	flushRemovedPhotos();
 	flushPersist();
 	disposeCollectionsStore();
 	disposeToast();
