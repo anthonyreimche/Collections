@@ -180,6 +180,14 @@ export function activePredicate(): PhotoPredicate | null {
   return (p) => members.has(p.id);
 }
 
+/** The photo fields activePredicate reads, for the grid filter's `reads`: none
+ *  with no collection active, or a regular one, which goes by photo id (a change
+ *  to its members registers the filter again). Undefined for a smart one, whose
+ *  rules may read any field. */
+export function activeReads(): readonly [] | undefined {
+  return byId(cs.getState().activeId)?.kind === "smart" ? undefined : [];
+}
+
 export function toggleActive(id: string): void {
   if (cs.getState().activeId === id) {
     deactivateCollection();

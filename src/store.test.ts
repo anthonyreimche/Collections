@@ -7,6 +7,7 @@ import assert from "node:assert";
 import { initRuntime } from "./runtime.ts";
 import {
   activePredicate,
+  activeReads,
   addPhotosTo,
   createRegular,
   cs,
@@ -144,9 +145,11 @@ assert.deepEqual(targetIds().sort(), ["p1", "p3"]);
 // ── activation: predicate + folder null + guarded subscription ───────────────
 
 assert.equal(activePredicate(), null);
+assert.deepEqual(activeReads(), [], "with no collection active the filter reads no photo field");
 toggleActive("seed");
 assert.equal(cs.getState().activeId, "seed");
 assert.deepEqual(folderWrites, [null], "activating nulls the folder source");
+assert.deepEqual(activeReads(), [], "a regular collection goes by photo id alone");
 const pred = activePredicate();
 assert.ok(pred, "active predicate exists");
 assert.ok(pred!(photo("p1", 5) as never));
@@ -176,6 +179,7 @@ assert.equal(saveSmart(null, "   ", "all", []).ok, false, "blank name rejected")
 assert.equal(smartMatchCount("all", keepers.rules), 2, "p1 and p3 rate ≥ 4");
 
 toggleActive(keepers.id);
+assert.equal(activeReads(), undefined, "a smart collection's rules may read any field");
 const smartPred = activePredicate()!;
 assert.ok(smartPred(photo("x", 4) as never));
 assert.ok(!smartPred(photo("x", 3) as never));

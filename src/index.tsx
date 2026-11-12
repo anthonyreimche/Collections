@@ -6,6 +6,7 @@ import { initRuntime } from "./runtime";
 import type { SafelightAPI } from "./safelight";
 import {
   activePredicate,
+  activeReads,
   cs,
   deactivateCollection,
   disposeCollectionsStore,
@@ -46,6 +47,7 @@ export function activate(api: SafelightAPI): void {
     api.registerGridFilter({
       id: FILTER_ID,
       test: predicate ?? (() => true),
+      reads: activeReads(),
       onClear: deactivateCollection,
     });
   };
