@@ -20,11 +20,11 @@ import {
   openAddTo,
   pruneRemovedPhoto,
   removePhotosFrom,
+  renameAction,
   saveSmart,
   setPanelMounted,
   setTarget,
   smartMatchCount,
-  targetIds,
   toggleActive,
   toggleTargetMembership,
 } from "./store.ts";
@@ -95,6 +95,7 @@ const fireSettings = (key: string, value: unknown) => {
 };
 
 const dockToggles: string[] = [];
+const notices: unknown[] = [];
 
 // Stored file from a "previous run", including one junk entry to sanitize out.
 settingsMap.set("data", {
@@ -110,7 +111,7 @@ initRuntime({
   version: 1,
   extensionId: "com.safelight.collections",
   react: {} as never,
-  ui: { tokens: {} } as never,
+  ui: { tokens: {}, notify: (n: unknown) => void notices.push(n) } as never,
   stores: { useCatalogStore, useUIStore, create: makeStore } as never,
   dock: { togglePanel: (id: string) => dockToggles.push(id) },
   settings: {
@@ -134,13 +135,6 @@ assert.deepEqual(
 );
 assert.equal(cs.getState().targetId, "seed");
 
-// ── targetIds: multi-selection else active photo ─────────────────────────────
-
-assert.deepEqual(targetIds(), []);
-useCatalogStore.setState({ activePhotoId: "p2", selectedIds: new Set(["p2"]) });
-assert.deepEqual(targetIds(), ["p2"]);
-useCatalogStore.setState({ selectedIds: new Set(["p1", "p3"]) });
-assert.deepEqual(targetIds().sort(), ["p1", "p3"]);
 
 // ── activation: predicate + folder null + guarded subscription ───────────────
 
@@ -190,11 +184,25 @@ assert.ok(!activePredicate()!(photo("x", 4) as never));
 
 // ── membership actions ───────────────────────────────────────────────────────
 
+notices.length = 0;
 addPhotosTo("seed", ["p2", "p1"]);
 const seed = () => cs.getState().collections.find((c) => c.id === "seed") as Collection;
 assert.deepEqual(seed().memberIds, ["p1", "gone", "p2"], "dedup keeps existing order");
+addPhotosTo("seed", ["p2"]);
 removePhotosFrom("seed", ["p1"]);
 assert.deepEqual(seed().memberIds, ["gone", "p2"]);
+assert.deepEqual(
+  notices,
+  ['Added 1 to "Seeded"', 'Already in "Seeded"', 'Removed 1 from "Seeded"'],
+  "membership changes are told in core's notices",
+);
+
+// ── rename: a refused name is told in a warning notice ───────────────────────
+
+notices.length = 0;
+const refused = renameAction("seed", "   ");
+assert.equal(refused.ok, false);
+if (!refused.ok) assert.deepEqual(notices, [{ message: refused.reason, tone: "warning" }]);
 
 // ── B-flow: no target → Quick Collection; all-members toggle removes ─────────
 

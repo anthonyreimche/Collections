@@ -24,8 +24,8 @@ import {
   toggleActive,
   toggleShowUnrelated,
 } from "../store.ts";
-import { showToast } from "./toast.ts";
-import { useMenu, type MenuItem } from "./menu.tsx";
+import type { ContextMenuItem } from "../safelight";
+import { useMenu } from "./menu.tsx";
 import { collectionIcon, plusIcon, smartIcon } from "./icons.ts";
 import { AddToDialog } from "./AddToDialog.tsx";
 import { SmartEditor } from "./SmartEditor.tsx";
@@ -135,7 +135,7 @@ interface RowProps {
   isTarget: boolean;
   unrelated: boolean;
   count: { shown: number; elsewhere: number };
-  openMenu(e: { clientX: number; clientY: number }, items: MenuItem[]): void;
+  openMenu(e: { clientX: number; clientY: number }, items: ContextMenuItem[]): void;
 }
 
 function Row({ c, active, isTarget, unrelated, count, openMenu }: RowProps): ReactElement {
@@ -145,8 +145,8 @@ function Row({ c, active, isTarget, unrelated, count, openMenu }: RowProps): Rea
   const [dropHover, setDropHover] = React.useState(false);
   const t = ui.tokens;
 
-  const menuItems = (): MenuItem[] => {
-    const items: MenuItem[] = [
+  const menuItems = (): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [
       { label: "Rename", onClick: () => setEditing(c.id) },
       { label: "Duplicate", onClick: () => duplicateAction(c.id) },
     ];
@@ -305,11 +305,7 @@ function RenameInput({ id, initial }: { id: string; initial: string }): ReactEle
       setEditing(null);
       return;
     }
-    const result = renameAction(id, value);
-    if (!result.ok) {
-      showToast(result.reason);
-      ref.current?.focus();
-    }
+    if (!renameAction(id, value).ok) ref.current?.focus();
   };
 
   return (

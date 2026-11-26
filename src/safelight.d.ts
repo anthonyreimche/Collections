@@ -3,7 +3,7 @@
 // (src/extensions/types.ts, src/catalog/types.ts); this file mirrors only what
 // we touch so the bundle type-checks standalone without depending on core.
 
-import type { ComponentType, CSSProperties, ReactNode } from "react";
+import type { ComponentType, CSSProperties, JSX, ReactNode } from "react";
 
 // ── catalogue model ────────────────────────────────────────────────────────────
 
@@ -161,6 +161,53 @@ export interface UiKit {
   }>;
   Field: ComponentType<{ label?: ReactNode; hint?: ReactNode; children?: ReactNode }>;
   tokens: Record<string, string>;
+  /** Take the Escape key while something of yours is open that Escape should
+   *  close (an edit mode whose handles sit over the photo, a popover): the
+   *  newest taker gets the key, ahead of an on-image tool, and a slider's
+   *  value field keeps it for its own revert. Returns the function that
+   *  gives the key back: call it as soon as there is nothing left to close,
+   *  from a React effect's cleanup. Needs Safelight 3.2.4. */
+  onEscape(handler: () => void): () => void;
+  /** Tell the person something without stopping them: a bar in the app's
+   *  bottom stack, under your extension's name, with a × to dismiss.
+   *  `info` and `success` go by themselves after a few seconds; `warning`
+   *  and `error` stay; a notice with `progress` (0..1) stays while the run
+   *  is under way. `update` changes it in place, `close` takes it down, and
+   *  core takes it down when your extension stops. Needs Safelight 3.2.7. */
+  notify(notice: string | NoticeOptions): NoticeHandle;
+}
+
+export type NoticeTone = "info" | "success" | "warning" | "error";
+
+export interface NoticeOptions {
+  message: string;
+  /** info and success go by themselves; warning and error stay until dismissed. */
+  tone?: NoticeTone;
+  /** 0..1 while a run is under way, which keeps the notice up; null for none. */
+  progress?: number | null;
+}
+
+export interface NoticeHandle {
+  update(next: Partial<NoticeOptions>): void;
+  close(): void;
+}
+
+export interface ContextMenuItem {
+  label: string;
+  onClick: () => void;
+  /** Render in the red danger colour (e.g. Remove). */
+  danger?: boolean;
+  disabled?: boolean;
+}
+
+/** A horizontal divider between groups of items. */
+export type ContextMenuEntry = ContextMenuItem | "separator";
+
+export interface ContextMenuProps {
+  x: number;
+  y: number;
+  items: ContextMenuEntry[];
+  onClose: () => void;
 }
 
 // ── the scoped API object handed to activate() ───────────────────────────────
@@ -180,12 +227,24 @@ export interface SafelightAPI {
     onChange(cb: (key: string, value: unknown) => void): () => void;
   };
   ui: UiKit;
+  components: {
+    /** The right-click menu core surfaces use, placed at client `x`/`y` and
+     *  kept in the viewport. Closes on an outside click, Escape, scroll, or
+     *  choosing an item. */
+    ContextMenu: (props: ContextMenuProps) => JSX.Element;
+  };
   stores: {
     useCatalogStore: StoreHook<CatalogState>;
     useUIStore: StoreHook<UIState>;
     create<T>(initializer: StateCreator<T>): StoreHook<T>;
   };
   dock: { togglePanel(id: string): void };
+  catalog: {
+    /** The ids a command on "these photos" acts on: the selection, else the
+     *  active photo, else none. Core's rating, rotate and delete shortcuts use
+     *  the same rule. Needs Safelight 3.2.7. */
+    targetIds(): string[];
+  };
 }
 
 export interface ExtensionModule {

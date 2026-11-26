@@ -71,7 +71,7 @@ export function SmartEditor({ collectionId }: { collectionId: string | null }): 
       onClose={closeDialog}
       footer={
         <>
-          {error && <span style={{ marginRight: "auto", fontSize: 10, color: "#e5484d" }}>{error}</span>}
+          {error && <span style={{ marginRight: "auto", fontSize: 10, color: t.labelRed }}>{error}</span>}
           <span style={{ marginRight: error ? 0 : "auto", fontSize: 10, color: t.textMuted }}>
             Matches {matchCount} of {photos.length} photos
           </span>
@@ -242,7 +242,7 @@ function RemoveButton({ onRemove }: { onRemove(): void }): ReactElement {
         border: "none",
         padding: "0 4px",
         cursor: "pointer",
-        color: hover ? "#e5484d" : t.textMuted,
+        color: hover ? t.labelRed : t.textMuted,
         fontSize: 13,
         lineHeight: 1,
       }}

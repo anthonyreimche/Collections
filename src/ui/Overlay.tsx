@@ -1,6 +1,6 @@
 // Fixed-inset dialogue shell (the shape core dialogues use), rendered from the
 // panel's subtree so it works docked, floating, or detached. Backdrop click
-// and Escape close.
+// and Escape (taken from core's Escape stack) close.
 
 import type { ReactElement, ReactNode } from "react";
 import { React, ui } from "../runtime.ts";
@@ -16,16 +16,9 @@ interface OverlayProps {
 export function Overlay({ title, width, onClose, children, footer }: OverlayProps): ReactElement {
   const t = ui.tokens;
 
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [onClose]);
+  const onCloseRef = React.useRef(onClose);
+  onCloseRef.current = onClose;
+  React.useEffect(() => ui.onEscape(() => onCloseRef.current()), []);
 
   return (
     <div

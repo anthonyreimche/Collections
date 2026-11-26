@@ -740,16 +740,12 @@ const PERSIST_DELAY_MS = 300;
 const PRUNE_DELAY_MS = 100;
 const QUICK_NAME = "Quick Collection";
 let cs;
-let notify = () => {};
 let persistTimer;
 let pruneTimer;
 let removedIds = /* @__PURE__ */ new Set();
 let ownFolderWrite = false;
 let panelMounted = false;
 let disposers = [];
-function setNotify(cb) {
-	notify = cb;
-}
 function setPanelMounted(mounted) {
 	panelMounted = mounted;
 }
@@ -821,12 +817,6 @@ function persistTarget() {
 	}
 }
 const byId = (id) => id === null ? void 0 : cs.getState().collections.find((c) => c.id === id);
-/** The photos an action targets: the multi-selection, else the active photo. */
-function targetIds() {
-	const s = api.stores.useCatalogStore.getState();
-	if (s.selectedIds.size > 1) return [...s.selectedIds];
-	return s.activePhotoId ? [s.activePhotoId] : [];
-}
 /** The grid predicate for the active collection; null when none is active. */
 function activePredicate() {
 	const active = byId(cs.getState().activeId);
@@ -834,6 +824,13 @@ function activePredicate() {
 	if (active.kind === "smart") return compileRules(active.rules, active.match, Date.now());
 	const members = new Set(active.memberIds);
 	return (p) => members.has(p.id);
+}
+/** The photo fields activePredicate reads, for the grid filter's `reads`: none
+*  with no collection active, or a regular one, which goes by photo id (a change
+*  to its members registers the filter again). Undefined for a smart one, whose
+*  rules may read any field. */
+function activeReads() {
+	return byId(cs.getState().activeId)?.kind === "smart" ? void 0 : [];
 }
 function toggleActive(id) {
 	if (cs.getState().activeId === id) {
@@ -916,7 +913,10 @@ function renameAction(id, name) {
 		cs.setState({ editingId: null });
 		persist();
 		bump();
-	}
+	} else api.ui.notify({
+		message: result.reason,
+		tone: "warning"
+	});
 	return result;
 }
 function duplicateAction(id) {
@@ -947,7 +947,7 @@ function addPhotosTo(collectionId, photoIds) {
 	const c = byId(collectionId);
 	if (c?.kind !== "collection" || photoIds.length === 0) return;
 	const added = addMembers(c, photoIds);
-	notify(added > 0 ? `Added ${added} to "${c.name}"` : `Already in "${c.name}"`);
+	api.ui.notify(added > 0 ? `Added ${added} to "${c.name}"` : `Already in "${c.name}"`);
 	if (added > 0) {
 		persist();
 		bump();
@@ -958,7 +958,7 @@ function removePhotosFrom(collectionId, photoIds) {
 	if (c?.kind !== "collection" || photoIds.length === 0) return;
 	const removed = removeMembers(c, photoIds);
 	if (removed > 0) {
-		notify(`Removed ${removed} from "${c.name}"`);
+		api.ui.notify(`Removed ${removed} from "${c.name}"`);
 		persist();
 		bump();
 	}
@@ -1031,126 +1031,27 @@ function toggleShowUnrelated() {
 	}
 }
 //#endregion
-//#region src/ui/toast.ts
-let el = null;
-let hideTimer;
-const SHOW_MS = 1600;
-function showToast(message) {
-	if (typeof document === "undefined") return;
-	if (!el) {
-		el = document.createElement("div");
-		Object.assign(el.style, {
-			position: "fixed",
-			left: "50%",
-			bottom: "48px",
-			transform: "translateX(-50%)",
-			zIndex: "950",
-			padding: "6px 14px",
-			borderRadius: "999px",
-			border: "1px solid var(--color-border)",
-			background: "var(--color-surface-1)",
-			color: "var(--color-text-primary)",
-			fontSize: "11px",
-			boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
-			pointerEvents: "none",
-			transition: "opacity 150ms ease"
-		});
-		document.body.appendChild(el);
-	}
-	el.textContent = message;
-	el.style.opacity = "1";
-	if (hideTimer !== void 0) clearTimeout(hideTimer);
-	hideTimer = setTimeout(() => {
-		if (el) el.style.opacity = "0";
-	}, SHOW_MS);
-}
-/** Remove the pill on extension unload so a disable leaves no orphan node. */
-function disposeToast() {
-	if (hideTimer !== void 0) clearTimeout(hideTimer);
-	hideTimer = void 0;
-	el?.remove();
-	el = null;
-}
-//#endregion
 //#region src/ui/menu.tsx
-function uiZoom() {
-	if (typeof getComputedStyle !== "function") return 1;
-	const raw = getComputedStyle(document.body).zoom;
-	const zoom = parseFloat(raw ?? "1");
-	return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
-}
 function useMenu() {
 	const [open, setOpen] = React.useState(null);
 	const openMenu = React.useCallback((e, items) => {
-		const zoom = uiZoom();
 		setOpen({
-			x: e.clientX / zoom,
-			y: e.clientY / zoom,
+			x: e.clientX,
+			y: e.clientY,
 			items
 		});
 	}, []);
-	React.useEffect(() => {
-		if (!open) return;
-		const onKey = (e) => {
-			if (e.key === "Escape") setOpen(null);
-		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [open]);
+	const close = React.useCallback(() => setOpen(null), []);
+	const { ContextMenu } = api.components;
 	return {
-		menu: !open ? null : /* @__PURE__ */ React.createElement("div", {
-			style: {
-				position: "fixed",
-				inset: 0,
-				zIndex: 60
-			},
-			onClick: () => setOpen(null),
-			onContextMenu: (e) => {
-				e.preventDefault();
-				setOpen(null);
-			}
-		}, /* @__PURE__ */ React.createElement("div", {
-			style: {
-				position: "fixed",
-				left: open.x,
-				top: open.y,
-				minWidth: 160,
-				padding: 4,
-				background: ui.tokens.surface1,
-				border: `1px solid ${ui.tokens.border}`,
-				borderRadius: 6,
-				boxShadow: "0 6px 20px rgba(0,0,0,0.35)"
-			},
-			onClick: (e) => e.stopPropagation()
-		}, open.items.map((item) => /* @__PURE__ */ React.createElement(MenuRow, {
-			key: item.label,
-			item,
-			close: () => setOpen(null)
-		})))),
+		menu: open ? /* @__PURE__ */ React.createElement(ContextMenu, {
+			x: open.x,
+			y: open.y,
+			items: open.items,
+			onClose: close
+		}) : null,
 		openMenu
 	};
-}
-function MenuRow({ item, close }) {
-	const [hover, setHover] = React.useState(false);
-	return /* @__PURE__ */ React.createElement("div", {
-		onMouseEnter: () => setHover(true),
-		onMouseLeave: () => setHover(false),
-		onClick: () => {
-			if (item.disabled) return;
-			close();
-			item.onClick();
-		},
-		style: {
-			padding: "5px 10px",
-			borderRadius: 4,
-			fontSize: 12,
-			cursor: item.disabled ? "default" : "pointer",
-			opacity: item.disabled ? .45 : 1,
-			color: item.danger ? "#e5484d" : ui.tokens.textPrimary,
-			background: hover && !item.disabled ? ui.tokens.surface2 : "transparent",
-			userSelect: "none"
-		}
-	}, item.label);
 }
 //#endregion
 //#region src/ui/icons.ts
@@ -1184,7 +1085,7 @@ function collectionIcon(size = 12) {
 		rx: 1,
 		stroke: "currentColor",
 		strokeWidth: 1,
-		fill: "var(--color-surface-1)"
+		fill: ui.tokens.surface1
 	})]);
 }
 /** The photo stack with a spark: the smart-collection glyph. */
@@ -1210,7 +1111,7 @@ function smartIcon(size = 12) {
 			rx: 1,
 			stroke: "currentColor",
 			strokeWidth: 1,
-			fill: "var(--color-surface-1)"
+			fill: ui.tokens.surface1
 		}),
 		React.createElement("path", {
 			key: "spark",
@@ -1232,16 +1133,9 @@ function plusIcon(size = 12) {
 //#region src/ui/Overlay.tsx
 function Overlay({ title, width, onClose, children, footer }) {
 	const t = ui.tokens;
-	React.useEffect(() => {
-		const onKey = (e) => {
-			if (e.key === "Escape") {
-				e.stopPropagation();
-				onClose();
-			}
-		};
-		window.addEventListener("keydown", onKey, true);
-		return () => window.removeEventListener("keydown", onKey, true);
-	}, [onClose]);
+	const onCloseRef = React.useRef(onClose);
+	onCloseRef.current = onClose;
+	React.useEffect(() => ui.onEscape(() => onCloseRef.current()), []);
 	return /* @__PURE__ */ React.createElement("div", {
 		style: {
 			position: "fixed",
@@ -1432,7 +1326,7 @@ function SmartEditor({ collectionId }) {
 		footer: /* @__PURE__ */ React.createElement(React.Fragment, null, error && /* @__PURE__ */ React.createElement("span", { style: {
 			marginRight: "auto",
 			fontSize: 10,
-			color: "#e5484d"
+			color: t.labelRed
 		} }, error), /* @__PURE__ */ React.createElement("span", { style: {
 			marginRight: error ? 0 : "auto",
 			fontSize: 10,
@@ -1573,7 +1467,7 @@ function RemoveButton({ onRemove }) {
 			border: "none",
 			padding: "0 4px",
 			cursor: "pointer",
-			color: hover ? "#e5484d" : t.textMuted,
+			color: hover ? t.labelRed : t.textMuted,
 			fontSize: 13,
 			lineHeight: 1
 		}
@@ -1812,11 +1706,7 @@ function RenameInput({ id, initial }) {
 			setEditing(null);
 			return;
 		}
-		const result = renameAction(id, value);
-		if (!result.ok) {
-			showToast(result.reason);
-			ref.current?.focus();
-		}
+		if (!renameAction(id, value).ok) ref.current?.focus();
 	};
 	return /* @__PURE__ */ React.createElement("input", {
 		ref,
@@ -1851,7 +1741,6 @@ const FILTER_ID = `${ID}.filter`;
 function activate(api) {
 	initRuntime(api);
 	initCollectionsStore();
-	setNotify(showToast);
 	api.registerPanel({
 		id: PANEL_ID,
 		title: "Collections",
@@ -1868,6 +1757,7 @@ function activate(api) {
 		api.registerGridFilter({
 			id: FILTER_ID,
 			test: predicate ?? (() => true),
+			reads: activeReads(),
 			onClear: deactivateCollection
 		});
 	};
@@ -1913,7 +1803,7 @@ function activate(api) {
 		label: "Toggle selection in target collection",
 		category: "Library",
 		defaultCombo: "B",
-		handler: () => toggleTargetMembership(targetIds())
+		handler: () => toggleTargetMembership(api.catalog.targetIds())
 	});
 	api.registerCatalogHooks({
 		id: `${ID}.hygiene`,
@@ -1926,7 +1816,6 @@ function deactivate() {
 	flushRemovedPhotos();
 	flushPersist();
 	disposeCollectionsStore();
-	disposeToast();
 }
 //#endregion
 export { activate, deactivate };

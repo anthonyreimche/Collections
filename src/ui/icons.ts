@@ -1,7 +1,7 @@
 // Inline SVG factories (no asset pipeline in a runtime-loaded bundle). All
 // strokes/fills use currentColor so rows can tint them via CSS colour.
 
-import { React } from "../runtime.ts";
+import { React, ui } from "../runtime.ts";
 import type { ReactElement } from "react";
 
 function svg(size: number, children: ReactElement[], viewBox = "0 0 12 12"): ReactElement {
@@ -21,7 +21,7 @@ export function collectionIcon(size = 12): ReactElement {
     }),
     React.createElement("rect", {
       key: "front", x: 1.5, y: 4, width: 7.5, height: 6, rx: 1,
-      stroke: "currentColor", strokeWidth: 1, fill: "var(--color-surface-1)",
+      stroke: "currentColor", strokeWidth: 1, fill: ui.tokens.surface1,
     }),
   ]);
 }
@@ -35,7 +35,7 @@ export function smartIcon(size = 12): ReactElement {
     }),
     React.createElement("rect", {
       key: "front", x: 1.5, y: 4, width: 7.5, height: 6, rx: 1,
-      stroke: "currentColor", strokeWidth: 1, fill: "var(--color-surface-1)",
+      stroke: "currentColor", strokeWidth: 1, fill: ui.tokens.surface1,
     }),
     React.createElement("path", {
       key: "spark",

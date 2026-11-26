@@ -61,11 +61,15 @@ const settingsMap = new Map();
 const settingsListeners = new Set();
 const registered = { menus: new Map() };
 const dockToggles = [];
+const notices = [];
+// core's api.catalog.targetIds: the selection, else the active photo.
+let targets = [];
 const api = {
   version: 1,
   extensionId: "com.safelight.collections",
   react: { createElement: () => null, Fragment: Symbol("Fragment") },
-  ui: { tokens: {} },
+  ui: { tokens: {}, notify: (n) => notices.push(n) },
+  catalog: { targetIds: () => targets },
   stores: { useCatalogStore, useUIStore, create: makeStore },
   dock: { togglePanel: (id) => dockToggles.push(id) },
   settings: {
@@ -117,9 +121,10 @@ assert.deepEqual(dockToggles, ["com.safelight.collections.panel"]);
 registered.key.handler();
 assert.equal(settingsMap.has("data"), false, "no-op writes nothing");
 
-// Select p1 → B creates the Quick Collection and adds it.
-useCatalogStore.setState({ activePhotoId: "p1", selectedIds: new Set(["p1"]) });
+// Select p1 → B creates the Quick Collection and adds it, and says so.
+targets = ["p1"];
 registered.key.handler();
+assert.deepEqual(notices, ['Added 1 to "Quick Collection"']);
 await sleep(400);
 let file = settingsMap.get("data");
 const quick = file.collections.find((c) => c.name === "Quick Collection");
@@ -147,7 +152,7 @@ settingsListeners.forEach((cb) =>
     collections: [{ id: "other", name: "From elsewhere", kind: "collection", memberIds: ["p2"] }],
   }),
 );
-useCatalogStore.setState({ activePhotoId: "p2", selectedIds: new Set(["p2"]) });
+targets = ["p2"];
 registered.key.handler(); // target vanished with the adoption → a fresh Quick Collection
 mod.deactivate(); // flushes the pending write synchronously
 file = settingsMap.get("data");

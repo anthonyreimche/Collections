@@ -17,12 +17,9 @@ import {
   PANEL_ID,
   pruneRemovedPhoto,
   removePhotosFrom,
-  setNotify,
-  targetIds,
   toggleTargetMembership,
 } from "./store.ts";
 import { CollectionsPanel } from "./ui/CollectionsPanel.tsx";
-import { disposeToast, showToast } from "./ui/toast.ts";
 
 const ID = "com.safelight.collections";
 const FILTER_ID = `${ID}.filter`;
@@ -30,7 +27,6 @@ const FILTER_ID = `${ID}.filter`;
 export function activate(api: SafelightAPI): void {
   initRuntime(api);
   initCollectionsStore();
-  setNotify(showToast);
 
   api.registerPanel({
     id: PANEL_ID,
@@ -98,7 +94,7 @@ export function activate(api: SafelightAPI): void {
     label: "Toggle selection in target collection",
     category: "Library",
     defaultCombo: "B",
-    handler: () => toggleTargetMembership(targetIds()),
+    handler: () => toggleTargetMembership(api.catalog.targetIds()),
   });
 
   api.registerCatalogHooks({
@@ -110,11 +106,9 @@ export function activate(api: SafelightAPI): void {
 }
 
 export function deactivate(): void {
-  // Contributions are swept by the host; flush the debounced write so a quick
-  // disable can't lose the last edit, then detach core-store listeners and
-  // drop the toast's DOM node.
+  // Contributions and notices are swept by the host; flush the debounced write
+  // so a quick disable can't lose the last edit, then detach core-store listeners.
   flushRemovedPhotos();
   flushPersist();
   disposeCollectionsStore();
-  disposeToast();
 }

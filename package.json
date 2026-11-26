@@ -1,13 +1,13 @@
 {
   "name": "safelight-collections",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Collections and smart collections for SafeLight — virtual photo groupings independent of folder structure.",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
     "install-local": "node scripts/install.mjs",
-    "test": "node --experimental-strip-types src/model/sanitize.test.ts && node --experimental-strip-types src/model/rules.test.ts && node --experimental-strip-types src/model/collections.test.ts && node --experimental-strip-types src/store.test.ts",
+    "test": "node --experimental-strip-types src/model/sanitize.test.ts && node --experimental-strip-types src/model/rules.test.ts && node --experimental-strip-types src/model/collections.test.ts && node --experimental-strip-types src/store.test.ts && node --experimental-strip-types src/ui/icons.test.ts",
     "smoke": "node scripts/build.mjs && node smoke.mjs",
     "typecheck": "tsc --noEmit"
   },

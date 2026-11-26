@@ -1,7 +1,7 @@
 // Extension state + every action the UI calls. Collections are mutated in
 // place via the pure model ops; `revision` is the change signal components
 // subscribe to. DOM-free by design (node tests drive it through a fake API):
-// user-facing feedback goes through the injected `notify` callback.
+// user-facing feedback goes through core's notices (api.ui.notify).
 
 import { api } from "./runtime.ts";
 import type { StoreHook } from "./safelight";
@@ -49,7 +49,6 @@ export interface CollectionsState {
 
 export let cs!: StoreHook<CollectionsState>;
 
-let notify: (message: string) => void = () => {};
 let persistTimer: ReturnType<typeof setTimeout> | undefined;
 let pruneTimer: ReturnType<typeof setTimeout> | undefined;
 let removedIds = new Set<string>();
@@ -57,9 +56,6 @@ let ownFolderWrite = false;
 let panelMounted = false;
 let disposers: (() => void)[] = [];
 
-export function setNotify(cb: (message: string) => void): void {
-  notify = cb;
-}
 
 export function setPanelMounted(mounted: boolean): void {
   panelMounted = mounted;
@@ -155,13 +151,6 @@ const byId = (id: string | null): AnyCollection | undefined =>
 
 export function liveIdSet(): Set<string> {
   return new Set(api.stores.useCatalogStore.getState().photos.map((p) => p.id));
-}
-
-/** The photos an action targets: the multi-selection, else the active photo. */
-export function targetIds(): string[] {
-  const s = api.stores.useCatalogStore.getState();
-  if (s.selectedIds.size > 1) return [...s.selectedIds];
-  return s.activePhotoId ? [s.activePhotoId] : [];
 }
 
 export function smartMatchCount(match: Match, rules: Rule[]): number {
@@ -263,6 +252,8 @@ export function renameAction(id: string, name: string): RenameResult {
     cs.setState({ editingId: null });
     persist();
     bump();
+  } else {
+    api.ui.notify({ message: result.reason, tone: "warning" });
   }
   return result;
 }
@@ -300,7 +291,7 @@ export function addPhotosTo(collectionId: string, photoIds: string[]): void {
   const c = byId(collectionId);
   if (c?.kind !== "collection" || photoIds.length === 0) return;
   const added = addMembers(c, photoIds);
-  notify(added > 0 ? `Added ${added} to "${c.name}"` : `Already in "${c.name}"`);
+  api.ui.notify(added > 0 ? `Added ${added} to "${c.name}"` : `Already in "${c.name}"`);
   if (added > 0) {
     persist();
     bump();
@@ -312,7 +303,7 @@ export function removePhotosFrom(collectionId: string, photoIds: string[]): void
   if (c?.kind !== "collection" || photoIds.length === 0) return;
   const removed = removeMembers(c, photoIds);
   if (removed > 0) {
-    notify(`Removed ${removed} from "${c.name}"`);
+    api.ui.notify(`Removed ${removed} from "${c.name}"`);
     persist();
     bump();
   }
